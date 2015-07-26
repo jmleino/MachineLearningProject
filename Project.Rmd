@@ -13,7 +13,7 @@ I load the needed libraries.
 ```{r}
 library('caret')
 library('doParallel')
-registerDoParallel(cores=4)
+registerDoParallel(cores=3)
 ```
 
 #Load and preprocess the data
@@ -90,3 +90,12 @@ is no  overfitting problem. The test data set was used only
 in the cross validation, hence it gives a reliable estimate 
 of out of sample error. The expected accuracy is over 99% 
 for new data.
+
+
+#Predicting
+
+Finally, I predict the values needed for the submission.
+```{r, cache = TRUE}
+ttdata <- read.csv("pml-testing.csv", na.strings = c("NA", "#DIV/0!"))
+predict( model, newdata = ttdata )
+```
