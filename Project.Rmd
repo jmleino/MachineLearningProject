@@ -1,0 +1,92 @@
+---
+title: "Machine Learning"
+output: html_document
+---
+
+
+```{r, echo=FALSE}
+setwd("~/Coursera Data Science/Machine Learning")
+```
+
+
+I load the needed libraries.
+```{r}
+library('caret')
+library('doParallel')
+registerDoParallel(cores=4)
+```
+
+#Load and preprocess the data
+
+First all the data is loaded.
+```{r, cache = TRUE}
+data <- read.csv("pml-training.csv", na.strings = c("NA", "#DIV/0!"))
+```
+
+There are two kinds of rows separated by the new_window column. As the test rows 
+are of the type 'No', I focus on those rows and omit the 'Yes' rows.
+```{r, cache = TRUE}
+data <- data[ data$new_window == 'no', ]
+```
+
+
+I partition the data into two categories. 
+Training data (80%) is used to train the model. 
+Test (20%) data is used to cross validate the chosen model. 
+This gives an unbiased estimate of the chosen model's accuracy.
+```{r, cache = TRUE}
+set.seed( 321 )
+trainIndex <- createDataPartition( data$classe, p = .8, list = FALSE)
+dataTrain = data[trainIndex,]
+dataTest = data[-trainIndex,]
+```
+
+The are many columns with very little variance. These are removed with 
+the nearZeroVar function.
+```{r, cache = TRUE}
+dataTrain2 <- dataTrain[ , -nearZeroVar( dataTrain ) ]
+```
+
+The aim of the project is to predict the manner in which an exercise is made. 
+Therefore technical columns like date and time are removed as they 
+do not generalize to new data.
+```{r, cache = TRUE}
+dataTrain2 <- dataTrain2[, !( names(dataTrain2) %in% c("X", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp", "num_window" ) ) ]
+```
+
+In order to find a good prediction model, a good understanding of the data 
+is needed. Unfortunately the time to gain thorough understanding of the 
+subject is too long for the purpose of this project.
+
+
+#Training
+
+The problem is a classification problem. Random forest algorithms 
+perform usually well so I use the rf model included in the caret 
+package.
+
+I train the model using the training data.
+```{r, cache = TRUE}
+model <- train( classe ~ ., data = dataTrain2, method = "rf" )
+model
+```
+
+I am satisfied with the accuracy of the model, therefore there is 
+no need to try other algorithms or tune parameters.
+
+
+#Cross validation
+
+Next I evaluate the model trained with the training data using the test data. 
+The test data is independent of the training data and therefore gives an 
+estimate of out of sample error.
+```{r, cache = TRUE}
+confusionMatrix( dataTest$classe, predict( model, newdata = dataTest ) )
+```
+
+
+The accuracy of the model is still good. This means that there 
+is no  overfitting problem. The test data set was used only 
+in the cross validation, hence it gives a reliable estimate 
+of out of sample error. The expected accuracy is over 99% 
+for new data.
